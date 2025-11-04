@@ -1,0 +1,28 @@
+{
+  "name": "mssql-audit-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.sqlserver.SqlServerConnector",
+    "database.hostname": "mssql",
+    "database.port": "1433",
+    "database.user": "debezium",
+    "database.password": "DbzPass@123",
+    "database.names": "TestDB",
+    "database.encrypt": "false",
+    "topic.prefix": "mssql",
+    "table.include.list": "dbo.Audit",
+    "schema.history.internal.kafka.bootstrap.servers": "kafka:29092",
+    "schema.history.internal.kafka.topic": "schema-changes.audit",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+    "snapshot.mode": "initial",
+    "time.precision.mode": "connect",
+    "decimal.handling.mode": "string",
+    "provide.transaction.metadata": "false",
+    "transforms": "unwrap",
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.drop.tombstones": "false"
+  }
+}
+
