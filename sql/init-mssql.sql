@@ -10,11 +10,27 @@ GO
 USE TestDB;
 GO
 
-EXEC sys.sp_cdc_enable_db;
+-- Enable CDC for the database if not already enabled
+IF EXISTS(SELECT 1 FROM sys.databases WHERE name = 'TestDB' AND is_cdc_enabled = 0)
+BEGIN
+    EXEC sys.sp_cdc_enable_db;
+END
 GO
 
+-- Drop the table if it exists
 IF OBJECT_ID('dbo.Audit', 'U') IS NOT NULL
+BEGIN
+    -- Disable CDC for the table if it exists
+    IF EXISTS(SELECT 1 FROM sys.tables t INNER JOIN sys.schemas s ON t.schema_id = s.schema_id WHERE t.name = 'Audit' AND s.name = 'dbo' AND t.is_tracked_by_cdc = 1)
+    BEGIN
+        EXEC sys.sp_cdc_disable_table 
+            @source_schema = N'dbo',
+            @source_name = N'Audit',
+            @capture_instance = 'dbo_Audit';
+    END
+    
     DROP TABLE dbo.Audit;
+END
 GO
 
 CREATE TABLE dbo.Audit (
@@ -36,11 +52,13 @@ CREATE TABLE dbo.Audit (
 );
 GO
 
+-- Enable CDC for the table
 EXEC sys.sp_cdc_enable_table
     @source_schema = N'dbo',
     @source_name = N'Audit',
     @role_name = NULL,
-    @supports_net_changes = 1;
+    @supports_net_changes = 1,
+    @capture_instance = 'dbo_Audit';
 GO
 
 USE master;
@@ -61,6 +79,11 @@ BEGIN
 END
 GO
 
+-- Grant necessary permissions for CDC
 EXEC sp_addrolemember 'db_owner', 'debezium';
 GO
 
+-- Grant additional CDC permissions
+GRANT SELECT ON SCHEMA::cdc TO debezium;
+GRANT VIEW DATABASE STATE TO debezium;
+GO

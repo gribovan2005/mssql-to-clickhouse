@@ -1,71 +1,81 @@
 CREATE DATABASE IF NOT EXISTS audit_db;
 
-CREATE TABLE IF NOT EXISTS audit_db.audit_kafka
+CREATE TABLE audit_db.audit_kafka
 (
-    AuditID Int64,
-    UserID Int32,
-    Username String,
-    Email String,
-    Action String,
-    EntityType String,
-    EntityID Int64,
-    OldValue Nullable(String),
-    NewValue Nullable(String),
-    IPAddress Nullable(String),
-    UserAgent Nullable(String),
-    Timestamp Int64,
-    SessionID Nullable(String),
-    Status String,
-    ErrorMessage Nullable(String)
+    ID Int32,
+    Code Int32,
+    Source String,
+    SourceDetails Nullable(String),
+    Data Nullable(String),
+    Date Int64,
+    Login String,
+    Realm String,
+    DelegatedUserID String,
+    DelegatedUserLogin Nullable(String),
+    UserID String,
+    ExtendedData Nullable(String),
+    EventLevel Int32,
+    UniqueId Nullable(String),
+    RoleId Int32,
+    Serial Nullable(String),
+    ClientId Nullable(String),
+    GroupName Nullable(String)
 )
 ENGINE = Kafka
 SETTINGS
     kafka_broker_list = 'kafka:29092',
-    kafka_topic_list = 'mssql.TestDB.dbo.Audit',
-    kafka_group_name = 'clickhouse_audit_group',
+    kafka_topic_list = 'mssql.AnalyticsServiceDb1021.dbo.Audit',
+    kafka_group_name = 'clickhouse_audit_group_v2',
     kafka_format = 'AvroConfluent',
     format_avro_schema_registry_url = 'http://schema-registry:8081',
     kafka_num_consumers = 1,
     kafka_skip_broken_messages = 10;
 
-CREATE TABLE IF NOT EXISTS audit_db.audit
+CREATE TABLE audit_db.audit
 (
-    AuditID Int64,
-    UserID Int32,
-    Username String,
-    Email String,
-    Action String,
-    EntityType String,
-    EntityID Int64,
-    OldValue Nullable(String),
-    NewValue Nullable(String),
-    IPAddress Nullable(String),
-    UserAgent Nullable(String),
-    Timestamp DateTime64(3),
-    SessionID Nullable(String),
-    Status String,
-    ErrorMessage Nullable(String),
+    ID Int32,
+    Code Int32,
+    Source String,
+    SourceDetails Nullable(String),
+    Data Nullable(String),
+    Date DateTime64(3),
+    Login String,
+    Realm String,
+    DelegatedUserID String,
+    DelegatedUserLogin Nullable(String),
+    UserID String,
+    ExtendedData Nullable(String),
+    EventLevel Int32,
+    UniqueId Nullable(String),
+    RoleId Int32,
+    Serial Nullable(String),
+    ClientId Nullable(String),
+    GroupName Nullable(String),
     _timestamp DateTime DEFAULT now()
 )
-ENGINE = MergeTree()
-ORDER BY (Timestamp, AuditID);
+ENGINE = ReplacingMergeTree(_timestamp)
+ORDER BY (Date, ID)
+SETTINGS index_granularity = 8192;
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS audit_db.audit_mv TO audit_db.audit AS
+CREATE MATERIALIZED VIEW audit_db.audit_mv TO audit_db.audit AS
 SELECT
-    AuditID,
+    ID,
+    Code,
+    Source,
+    SourceDetails,
+    Data,
+    fromUnixTimestamp64Milli(Date) AS Date,
+    Login,
+    Realm,
+    DelegatedUserID,
+    DelegatedUserLogin,
     UserID,
-    Username,
-    Email,
-    Action,
-    EntityType,
-    EntityID,
-    OldValue,
-    NewValue,
-    IPAddress,
-    UserAgent,
-    fromUnixTimestamp64Milli(Timestamp) AS Timestamp,
-    SessionID,
-    Status,
-    ErrorMessage
+    ExtendedData,
+    EventLevel,
+    UniqueId,
+    RoleId,
+    Serial,
+    ClientId,
+    GroupName,
+    _timestamp
 FROM audit_db.audit_kafka;
-

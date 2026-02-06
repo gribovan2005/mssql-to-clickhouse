@@ -50,32 +50,33 @@ services:
     networks:
       - kafka-network
 
-  mssql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    hostname: mssql
-    container_name: mssql
-    ports:
-      - "1433:1433"
-    environment:
-      ACCEPT_EULA: Y
-      SA_PASSWORD: 'Pass@word123'
-      MSSQL_PID: Developer
-      MSSQL_AGENT_ENABLED: 'true'
-    volumes:
-      - ./mssql-data:/var/opt/mssql/data
-      - ./sql/init-mssql.sql:/docker-entrypoint-initdb.d/init.sql
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-    networks:
-      - kafka-network
-    healthcheck:
-      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Pass@word123 -C -Q "SELECT 1" || exit 1
-      interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 10s
+  
+  # mssql:
+  #   image: mcr.microsoft.com/mssql/server:2022-latest
+  #   hostname: mssql
+  #   container_name: mssql
+  #   ports:
+  #     - "1433:1433"
+  #   environment:
+  #     ACCEPT_EULA: Y
+  #     SA_PASSWORD: 'Pass@word123'
+  #     MSSQL_PID: Developer
+  #     MSSQL_AGENT_ENABLED: 'true'
+  #   volumes:
+  #     - ./mssql-data:/var/opt/mssql/data
+  #     - ./sql/init-mssql.sql:/docker-entrypoint-initdb.d/init.sql
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 4G
+  #   networks:
+  #     - kafka-network
+  #   healthcheck:
+  #     test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Pass@word123 -C -Q "SELECT 1" || exit 1
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 10
+  #     start_period: 10s
 
   kafka-connect:
     build:
@@ -86,7 +87,6 @@ services:
     depends_on:
       - kafka
       - schema-registry
-      - mssql
     ports:
       - "8083:8083"
     environment:
@@ -194,7 +194,7 @@ networks:
     driver: bridge
 
 volumes:
-  mssql-data:
+  #mssql-data:
   clickhouse-data:
   prometheus-data:
   grafana-data:
